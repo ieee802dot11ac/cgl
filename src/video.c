@@ -5,18 +5,17 @@
 #include <stdint.h>
 #include <stdio.h>
 
-float image[] = {
-    1,0,0,
-    0,1,0,
-    0,0,1,
-    0.5,0,0.5
-};
+int do_wireframe;
+uint8_t image[64] = { 0xFF };
+uint tex_id = 0;
 
 void init_ogl(int wid, int hei) {
+
     glViewport(0, 0, wid, hei);
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    glEnable(GL_TEXTURE_2D);
+    
     glEnable(GL_DEPTH_TEST);
+    //glShadeModel(GL_FLAT);
 
     const float DEG2RAD = SDL_acos(-1.0f) / 180;
 	const float front = 0.1;
@@ -37,15 +36,27 @@ void init_ogl(int wid, int hei) {
     glMatrixMode(GL_PROJECTION);
     glFrustum(-right, right, -top, top, front, back);
 
+    glActiveTexture(GL_TEXTURE0);
+
+    glGenTextures(1, &tex_id);
+    glBindTexture( GL_TEXTURE_2D, tex_id);
+
+    // here lies TMU config hell. there is no honor to be gained here.
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_GEN_S);
+    glEnable(GL_TEXTURE_GEN_T);
+
+    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glActiveTexture(GL_TEXTURE0);
-    uint tex_id = 0;
-    glGenTextures(1, &tex_id);
-    glBindTexture( GL_TEXTURE_2D, tex_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGB, GL_FLOAT, image);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
     glFinish();
 }
@@ -53,20 +64,17 @@ void init_ogl(int wid, int hei) {
 void do_ogl_updates(void) {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindTexture(GL_TEXTURE_2D, tex_id);
     glActiveTexture(GL_TEXTURE0);
-    glBegin(GL_TRIANGLE_STRIP);
-    //glColor3f(1.0, 0, 0);
-    glTexCoord2f(0, 0);
-    glVertex3f(-0.33, 0.3,-1);
-    //glColor3f(0, 1.0, 0);
-    glTexCoord2f(1, 0);
-    glVertex3f(-0.33, -0.3,-1);
-    //glColor3f(0, 0, 1.0);
-    glTexCoord2f(1, 1);
-    glVertex3f(0.33, 0.3,-1);
-    //glColor3f(1.0,0,1.0);
-    glTexCoord2f(0, 1);
-    glVertex3f(0.33, -0.3,-1);
+    glBegin(do_wireframe ? GL_LINE_LOOP : GL_TRIANGLES);
+
+    /*glColor3f(1.0, 0, 0);*/ glTexCoord2f(0, 0); glVertex3f(-0.66, 0.66,-1);
+    /*glColor3f(0, 1.0, 0);*/ glTexCoord2f(1, 0); glVertex3f(-0.66, -0.66,-1);
+    /*glColor3f(0, 0, 1.0);*/ glTexCoord2f(0, 1); glVertex3f(0.66, 0.66,-1);
+    /*glColor3f(0, 0, 1.0);*/ glTexCoord2f(0, 1); glVertex3f(0.66, 0.50,-1);
+    /*glColor3f(0, 1.0, 0);*/ glTexCoord2f(1, 0); glVertex3f(-0.33, -0.50,-1);
+    /*glColor3f(1.0,0,1.0);*/ glTexCoord2f(0, 0); glVertex3f(0.66, -0.50,-1);
+    
     glEnd();
 
     glFinish();

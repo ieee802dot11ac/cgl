@@ -1,19 +1,23 @@
 #include "video.h"
+#include "tex.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 
-uint16_t image[256] = { 0x0100 };
 uint tex_id = 0;
+GL_Texture* tex = 0;
 
-typedef ushort pixelbuf[256];
-
-static pixelbuf* gen_linear_buf() {
-    pixelbuf b = {0};
-    for (int i = 0; i < 256; i++) b[i] = i;
-    return &b;
+static void* gen_checkerboard() {
+    uint8_t* b = malloc(sizeof(uint8_t) * 256);
+    for (int i = 0; i < 256;) {
+        b[i++] = 255;
+        b[i] = 255 - i; i++;
+        b[i] = i; i++;
+        b[i++] = 255;
+    }
+    return b;
 }
 
 void init_ogl(int wid, int hei) {
@@ -22,6 +26,8 @@ void init_ogl(int wid, int hei) {
     glClearColor(0.0, 0.0, 1.0, 1.0);
     
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+	glDisable(GL_BLEND);
     //glShadeModel(GL_FLAT);
 
     const float DEG2RAD = SDL_acos(-1.0f) / 180;
@@ -43,58 +49,37 @@ void init_ogl(int wid, int hei) {
     glMatrixMode(GL_PROJECTION);
     glFrustum(-right, right, -top, top, front, back);
 
-    glActiveTexture(GL_TEXTURE0);
+    void* image = gen_checkerboard();
 
-    glGenTextures(1, &tex_id);
-    glBindTexture( GL_TEXTURE_2D, tex_id);
+    tex = new_texture_ext(8, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
-    // here lies TMU config hell. there is no honor to be gained here.
-    glEnable(GL_TEXTURE_2D);
-
-    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    
-    glEnable(GL_TEXTURE_GEN_S);
-    glEnable(GL_TEXTURE_GEN_T);
-    glEnable(GL_TEXTURE_GEN_R);
-    glEnable(GL_TEXTURE_GEN_Q);
-
-    glDisable(GL_LIGHTING);
-	glDisable (GL_BLEND);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 16, 16, 0, GL_COLOR_INDEX, GL_UNSIGNED_BYTE, image);
-
-    glFinish();
+    free(image);
 }
 
 void do_ogl_updates(void) {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glBindTexture(GL_TEXTURE_2D, tex_id);
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
+    activate_texture(tex);
     glBegin(GL_TRIANGLE_STRIP);
 
-    glColor3f(0,0,0); glTexCoord2f(0, 0); glVertex3f(-0.66, 0.66,-1);
-    /*glColor3f(0,0,0);*/ glTexCoord2f(0, 1); glVertex3f(-0.66, -0.66,-1);
-    /*glColor3f(0,0,0);*/ glTexCoord2f(1, 0); glVertex3f(0.66, 0.66,-1);
-    /*glColor3f(0,1,0);*/ glTexCoord2f(1, 1); glVertex3f(0.66, -0.66,-1);
+    glColor3b(0,0,0);
+
+    /*glColor3f(1,0,0);*/ glTexCoord2f(-1,-1); glVertex3f(-0.66,  0.66,-1.5);
+    /*glColor3f(0,1,0);*/ glTexCoord2f(-1, 1); glVertex3f(-0.66, -0.66,-1);
+    /*glColor3f(0,0,1);*/ glTexCoord2f( 1,-1); glVertex3f( 0.66,  0.66,-1.5);
+    /*glColor3f(1,1,1);*/ glTexCoord2f( 1, 1); glVertex3f( 0.66, -0.66,-1);
     
     glEnd();
-
-    glFinish();
     
     uint err = glGetError();
     if (err != GL_NO_ERROR) {
-        dprintf(2, "oh shit! gl errored with %i! that's bad!\n", err);
+        dprintf(2, "oh shit! gl errored with 0x%X! that's bad!\n", err);
         exit(-1);
     }
 }
 
+void toggle_wireframe() {
+    static int wireframe_on;
+    glPolygonMode( GL_FRONT_AND_BACK, wireframe_on ? GL_LINE : GL_FILL);
+    wireframe_on = !wireframe_on;
+}

@@ -1,4 +1,5 @@
 #include "sdlwrap.h"
+#include "video.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_messagebox.h>
@@ -28,6 +29,10 @@ uint32_t do_sdl_event_updates() {
     SDL_Event event;
     SDL_PollEvent(&event);
     switch (event.type) {
+        case SDL_TEXTINPUT:
+            if (event.key.keysym.sym == SDLK_SPACE) toggle_wireframe();
+            break;
+
         case SDL_QUIT:
             return -1;
     }

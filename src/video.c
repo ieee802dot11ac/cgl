@@ -1,34 +1,16 @@
 #include "video.h"
-#include "tex.h"
+#include "mesh.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
-
-uint tex_id = 0;
-GL_Texture* tex = 0;
-
-static void* gen_checkerboard() {
-    uint8_t* b = malloc(sizeof(uint8_t) * 256);
-    for (int i = 0; i < 256;) {
-        b[i++] = 255;
-        b[i] = 255 - i; i++;
-        b[i] = i; i++;
-        b[i++] = 255;
-    }
-    return b;
-}
+#include <SDL2/SDL_stdinc.h>
 
 void init_ogl(int wid, int hei) {
 
     glViewport(0, 0, wid, hei);
-    glClearColor(0.0, 0.0, 1.0, 1.0);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-	glDisable(GL_BLEND);
-    //glShadeModel(GL_FLAT);
+    glShadeModel(GL_SMOOTH);
 
     const float DEG2RAD = SDL_acos(-1.0f) / 180;
 	const float front = 0.1;
@@ -48,28 +30,12 @@ void init_ogl(int wid, int hei) {
 
     glMatrixMode(GL_PROJECTION);
     glFrustum(-right, right, -top, top, front, back);
-
-    void* image = gen_checkerboard();
-
-    tex = new_texture_ext(8, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-    free(image);
 }
 
 void do_ogl_updates(void) {
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    activate_texture(tex);
-    glBegin(GL_TRIANGLE_STRIP);
-
-    glColor3b(0,0,0);
-
-    /*glColor3f(1,0,0);*/ glTexCoord2f(-1,-1); glVertex3f(-0.66,  0.66,-1.5);
-    /*glColor3f(0,1,0);*/ glTexCoord2f(-1, 1); glVertex3f(-0.66, -0.66,-1);
-    /*glColor3f(0,0,1);*/ glTexCoord2f( 1,-1); glVertex3f( 0.66,  0.66,-1.5);
-    /*glColor3f(1,1,1);*/ glTexCoord2f( 1, 1); glVertex3f( 0.66, -0.66,-1);
     
-    glEnd();
+    do_mesh_stack_updates();
     
     uint err = glGetError();
     if (err != GL_NO_ERROR) {

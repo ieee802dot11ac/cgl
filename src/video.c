@@ -6,7 +6,7 @@
 
 void init_ogl(int wid, int hei) {
 
-    glViewport(0, 0, wid, hei);
+    glViewport(160, 0, wid, hei);
     glClearColor(0.0, 0.0, 0.0, 1.0);
     
     glEnable(GL_DEPTH_TEST);

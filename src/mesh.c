@@ -26,12 +26,15 @@ void do_mesh_stack_updates() {
     for (int i = 0; i < render_stack_size; i++) {
         mesh_t* working = rendering_mesh_stack[i];
         for (int j = 0; j < working->face_ct; j++) {
-            glColor3fv((float*)&(working->verts[working->faces[i].idx0].color));
-            glVertex3fv((float*)&(working->verts[working->faces[i].idx0].pos));
-            glColor3fv((float*)&(working->verts[working->faces[i].idx1].color));
-            glVertex3fv((float*)&(working->verts[working->faces[i].idx1].pos));
-            glColor3fv((float*)&(working->verts[working->faces[i].idx2].color));
-            glVertex3fv((float*)&(working->verts[working->faces[i].idx2].pos));
+            vertex_t vtx = working->verts[working->faces[i].idx0];
+            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+            vtx = working->verts[working->faces[i].idx1];
+            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+            vtx = working->verts[working->faces[i].idx2];
+            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
         }
     }
     glEnd();
@@ -42,6 +45,7 @@ void delete_mesh(mesh_t* mesh, SDL_bool remove_from_stack) {
     SDL_free(mesh->faces);
     SDL_free(mesh);
 
+    mesh_t** saved_mesh_stack_ptr = rendering_mesh_stack;
     mesh_t** new_mesh_stack = SDL_malloc((render_stack_size - 1) * sizeof(void*));
 
     if (remove_from_stack) {
@@ -55,6 +59,6 @@ void delete_mesh(mesh_t* mesh, SDL_bool remove_from_stack) {
     }
 
     render_stack_size--;
-    SDL_free(rendering_mesh_stack);
+    SDL_free(saved_mesh_stack_ptr);
     rendering_mesh_stack = new_mesh_stack;
 }

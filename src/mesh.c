@@ -45,10 +45,9 @@ void delete_mesh(mesh_t* mesh, SDL_bool remove_from_stack) {
     SDL_free(mesh->faces);
     SDL_free(mesh);
 
-    mesh_t** saved_mesh_stack_ptr = rendering_mesh_stack;
-    mesh_t** new_mesh_stack = SDL_malloc((render_stack_size - 1) * sizeof(void*));
-
     if (remove_from_stack) {
+        mesh_t** saved_mesh_stack_ptr = rendering_mesh_stack;
+        mesh_t** new_mesh_stack = SDL_malloc((render_stack_size - 1) * sizeof(void*));
         for (int i = 0; i < render_stack_size; i++) {
             if (rendering_mesh_stack[i] == mesh) {
                 rendering_mesh_stack++;
@@ -56,9 +55,8 @@ void delete_mesh(mesh_t* mesh, SDL_bool remove_from_stack) {
             }
             new_mesh_stack[i] = rendering_mesh_stack[i];
         }
+        render_stack_size--;
+        SDL_free(saved_mesh_stack_ptr);
+        rendering_mesh_stack = new_mesh_stack;
     }
-
-    render_stack_size--;
-    SDL_free(saved_mesh_stack_ptr);
-    rendering_mesh_stack = new_mesh_stack;
 }

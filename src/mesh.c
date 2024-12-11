@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "tex.h"
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_stdinc.h>
 
@@ -22,22 +23,43 @@ mesh_t* new_mesh(uint16_t vert_ct, uint16_t face_ct, SDL_bool add_to_stack) {
 }
 
 void do_mesh_stack_updates() {
-    glBegin(GL_TRIANGLES);
     for (int i = 0; i < render_stack_size; i++) {
         mesh_t* working = rendering_mesh_stack[i];
-        for (int j = 0; j < working->face_ct; j++) {
-            vertex_t vtx = working->verts[working->faces[i].idx0];
-            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
-            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
-            vtx = working->verts[working->faces[i].idx1];
-            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
-            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
-            vtx = working->verts[working->faces[i].idx2];
-            glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
-            glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+        if (working->texture) {
+            activate_texture(working->texture);
         }
+        glBegin(GL_TRIANGLES);
+        if (working->texture) {
+            for (int j = 0; j < working->face_ct; j++) {
+                vertex_t vtx = working->verts[working->faces[i].idx0];
+                glTexCoord2f(vtx.uv.x, vtx.uv.y);
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+                vtx = working->verts[working->faces[i].idx1];
+                glTexCoord2f(vtx.uv.x, vtx.uv.y);
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+                vtx = working->verts[working->faces[i].idx2];
+                glTexCoord2f(vtx.uv.x, vtx.uv.y);
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+            }
+        } else {
+            for (int j = 0; j < working->face_ct; j++) {
+                vertex_t vtx = working->verts[working->faces[i].idx0];
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+                vtx = working->verts[working->faces[i].idx1];
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+                vtx = working->verts[working->faces[i].idx2];
+                glColor3f(vtx.color.x, vtx.color.y, vtx.color.z);
+                glVertex3f(vtx.pos.x, vtx.pos.y, vtx.pos.z);
+            }
+        }
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
     }
-    glEnd();
 }
 
 void delete_mesh(mesh_t* mesh, SDL_bool remove_from_stack) {

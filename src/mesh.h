@@ -1,5 +1,10 @@
 #pragma once
+#include "tex.h"
 #include <SDL2/SDL_stdinc.h>
+
+typedef struct _vec2 {
+    float x,y;
+} vector2_t;
 
 typedef struct _vec3 {
     float x,y,z;
@@ -8,6 +13,7 @@ typedef struct _vec3 {
 typedef struct _vtx {
     vector3_t pos;
     vector3_t color;
+    vector2_t uv;
 } vertex_t;
 
 typedef struct _face {
@@ -17,6 +23,7 @@ typedef struct _face {
 typedef struct _mesh {
     vertex_t* verts;
     face_t* faces;
+    texture_t* texture;
     uint16_t vert_ct;
     uint16_t face_ct;
 } mesh_t;
